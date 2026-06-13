@@ -1883,25 +1883,24 @@ ${conciseModeGuidance}`;
         fullPrompt = `${styleChangeWarning}\n[LỆNH TỐI THƯỢNG TỪ HỆ THỐNG]: MÀY BẮT BUỘC PHẢI XƯNG "TAO" VÀ GỌI NGƯỜI DÙNG LÀ "MÀY". NẾU DÙNG TỪ "BẠN", "MÌNH", "CHÚNG TA", "ANH/CHỊ", MÀY SẼ BỊ TIÊU DIỆT LẬP TỨC! ĐÂY LÀ CHẾ ĐỘ SOCRATES, BẮT BUỘC KẾT THÚC BẰNG CÂU HỎI MỞ.\n\nNgữ cảnh: ${context}\n${styleNotice}\n\nHọc sinh hỏi: ${message}`;
       }
 
-      // Convert client history format to Gemini format and force sanitize past pronouns
-      let previousHistory: any[] = [];
-      if (history && Array.isArray(history)) {
-        previousHistory = history.map(msg => {
+      // Encode History into Context Instead of Separate Messages (Option B + C Mixed)
+      let historyBlock = "";
+      if (history && Array.isArray(history) && history.length > 0) {
+        historyBlock = "\n=== LỊCH SỬ CHAT TRƯỚC ĐÓ ===\n" + history.map(msg => {
           let sanitizedText = msg.text;
           if (msg.role === "ai") {
              sanitizedText = sanitizedText.replace(/\bBạn\b/g, "Mày").replace(/\bbạn\b/g, "mày")
                .replace(/\bChúng ta\b/g, "Tụi mày").replace(/\bchúng ta\b/g, "tụi mày")
                .replace(/\bMình\b/g, "Tao").replace(/\bmình\b/g, "tao");
+             return `AI: ${sanitizedText}`;
           }
-          return {
-            role: msg.role === "ai" ? "model" : "user",
-            parts: [{ text: sanitizedText }]
-          };
-        });
+          return `USER: ${sanitizedText}`;
+        }).join("\n---\n") + "\n=== HẾT LỊCH SỬ CHAT ===\n";
       }
 
+      fullPrompt = `${historyBlock}\n${fullPrompt}`;
+
       const contents = [
-          ...previousHistory,
           { role: "user", parts: [{ text: fullPrompt }] }
       ];
 
@@ -3205,11 +3204,11 @@ async function setupViteAndStart() {
     });
     app.use(vite.middlewares);
   } else {
-    // On Vercel or Production API environments, we should NOT serve the frontend via Express!
-    // Vercel's CDN directly serves the frontend dist/.
-    // Any request reaching this fallback means the API route was not found.
-    app.use((req, res) => {
-      res.status(404).json({ error: true, message: "API route not found" });
+    // In Production (AI Studio Shared / Docker), we MUST serve the frontend via Express!
+    const distPath = path.join(process.cwd(), 'dist');
+    app.use(express.static(distPath));
+    app.get('*', (req, res) => {
+      res.sendFile(path.join(distPath, 'index.html'));
     });
   }
 
