@@ -61,6 +61,7 @@ const TiltCard = ({ children, delayIdx, className = "" }: { children: React.Reac
 
 export const DeckList = ({ decks, showSearch = true, groupBySubject = false, onCategoryQuiz }: DeckListProps) => {
   const [searchQuery, setSearchQuery] = useState("");
+  const [sortOrder, setSortOrder] = useState<"default" | "newest" | "oldest" | "az" | "za">("default");
   const [recentSearches, setRecentSearches] = useState<string[]>(() => {
     const saved = localStorage.getItem('recentSearches');
     return saved ? JSON.parse(saved) : [];
@@ -86,22 +87,42 @@ export const DeckList = ({ decks, showSearch = true, groupBySubject = false, onC
     localStorage.setItem('recentSearches', JSON.stringify(newRecent));
   };
 
-  const filteredDecks = useMemo(() => {
-    return decks.filter(deck => 
+  const sortedAndFilteredDecks = useMemo(() => {
+    let result = [...decks].filter(deck => 
       deck.title.toLowerCase().includes(searchQuery.toLowerCase()) || 
       (deck.subject || "Tự chọn").toLowerCase().includes(searchQuery.toLowerCase())
     );
-  }, [decks, searchQuery]);
+
+    if (sortOrder === "newest") {
+      result.sort((a, b) => {
+        const timeA = a.createdAt ? (typeof a.createdAt === 'string' ? new Date(a.createdAt).getTime() : a.createdAt) : 0;
+        const timeB = b.createdAt ? (typeof b.createdAt === 'string' ? new Date(b.createdAt).getTime() : b.createdAt) : 0;
+        return timeB - timeA;
+      });
+    } else if (sortOrder === "oldest") {
+      result.sort((a, b) => {
+        const timeA = a.createdAt ? (typeof a.createdAt === 'string' ? new Date(a.createdAt).getTime() : a.createdAt) : 0;
+        const timeB = b.createdAt ? (typeof b.createdAt === 'string' ? new Date(b.createdAt).getTime() : b.createdAt) : 0;
+        return timeA - timeB;
+      });
+    } else if (sortOrder === "az") {
+      result.sort((a, b) => a.title.localeCompare(b.title, 'vi'));
+    } else if (sortOrder === "za") {
+      result.sort((a, b) => b.title.localeCompare(a.title, 'vi'));
+    }
+
+    return result;
+  }, [decks, searchQuery, sortOrder]);
 
   const groupedDecks = useMemo(() => {
-    return filteredDecks.reduce((acc, deck) => {
+    return sortedAndFilteredDecks.reduce((acc, deck) => {
       const subj = String(deck?.subject || "Tự chọn").trim();
       const normalizedSubj = subj.toUpperCase(); // Normalize for consistent grouping titles
       if (!acc[normalizedSubj]) acc[normalizedSubj] = [];
       acc[normalizedSubj].push(deck);
       return acc;
     }, {} as Record<string, Deck[]>);
-  }, [filteredDecks]);
+  }, [sortedAndFilteredDecks]);
 
   const getCreatorLabel = (d: Deck) => {
     const systemDecks = ["deck_1", "deck_phil_2", "deck_math_1", "deck_math_2", "deck_physics_1", "deck_physics_2", "daily-quest", "remind-later-deck"];
@@ -121,50 +142,67 @@ export const DeckList = ({ decks, showSearch = true, groupBySubject = false, onC
   return (
     <div className="space-y-10">
       {showSearch && (
-        <div className="relative w-full max-w-2xl my-8">
-          <div className="absolute inset-y-0 left-0 pl-6 flex items-center pointer-events-none">
-            <Search className="h-8 w-8 text-stone-400" />
-          </div>
-          <input
-            type="text"
-            placeholder="Tìm kiếm bộ thẻ..."
-            value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
-            onFocus={() => setIsDropdownOpen(true)}
-            onBlur={() => setTimeout(() => setIsDropdownOpen(false), 200)}
-            onKeyDown={(e) => {
-              if (e.key === 'Enter') saveSearch(searchQuery);
-            }}
-            className="block w-full pl-16 pr-16 py-5 border-2 border-stone-300 dark:border-stone-700 rounded-2xl bg-white dark:bg-stone-900 focus:ring-4 focus:ring-yellow-500/55 focus:border-yellow-500 transition text-xl sm:text-3xl min-h-[72px] font-black"
-          />
-          {searchQuery && (
-            <button
-              onClick={() => setSearchQuery("")}
-              className="absolute inset-y-0 right-2 flex items-center justify-center w-16 h-16 min-w-[64px] min-h-[64px] hover:bg-stone-100 dark:hover:bg-zinc-800 rounded-full transition-colors my-auto focus:outline-none"
-              aria-label="Clear Search"
-            >
-              <X className="h-7 w-7 text-stone-400 hover:text-stone-600 dark:hover:text-stone-200" />
-            </button>
-          )}
-          {isDropdownOpen && !searchQuery && recentSearches.length > 0 && (
-            <div className="absolute top-full left-0 right-0 mt-4 bg-white dark:bg-stone-900 border-2 border-stone-300 dark:border-stone-700 rounded-2xl shadow-2xl z-50 overflow-hidden">
-              <div className="px-8 py-5 text-base sm:text-xl text-stone-500 uppercase tracking-widest font-black border-b-2 border-stone-200 dark:border-stone-700">Tìm kiếm gần đây</div>
-              {recentSearches.map((search) => (
-                <button
-                  key={search}
-                  onClick={() => setSearchQuery(search)}
-                  className="w-full text-left px-8 py-5 text-xl sm:text-2xl hover:bg-stone-100 dark:hover:bg-stone-800 transition font-black min-h-[64px]"
-                >
-                  {search}
-                </button>
-              ))}
+        <div className="flex flex-col sm:flex-row gap-4 items-center w-full my-8">
+          <div className="relative w-full max-w-2xl flex-1">
+            <div className="absolute inset-y-0 left-0 pl-6 flex items-center pointer-events-none">
+              <Search className="h-8 w-8 text-stone-400" />
             </div>
-          )}
+            <input
+              type="text"
+              placeholder="Tìm kiếm bộ thẻ..."
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              onFocus={() => setIsDropdownOpen(true)}
+              onBlur={() => setTimeout(() => setIsDropdownOpen(false), 200)}
+              onKeyDown={(e) => {
+                if (e.key === 'Enter') saveSearch(searchQuery);
+              }}
+              className="block w-full pl-16 pr-16 py-5 border-2 border-stone-300 dark:border-stone-700 rounded-2xl bg-white dark:bg-stone-900 focus:ring-4 focus:ring-yellow-500/55 focus:border-yellow-500 transition text-xl sm:text-3xl min-h-[72px] font-black"
+            />
+            {searchQuery && (
+              <button
+                onClick={() => setSearchQuery("")}
+                className="absolute inset-y-0 right-2 flex items-center justify-center w-16 h-16 min-w-[64px] min-h-[64px] hover:bg-stone-100 dark:hover:bg-zinc-800 rounded-full transition-colors my-auto focus:outline-none"
+                aria-label="Clear Search"
+              >
+                <X className="h-7 w-7 text-stone-400 hover:text-stone-600 dark:hover:text-stone-200" />
+              </button>
+            )}
+            {isDropdownOpen && !searchQuery && recentSearches.length > 0 && (
+              <div className="absolute top-full left-0 right-0 mt-4 bg-white dark:bg-stone-900 border-2 border-stone-300 dark:border-stone-700 rounded-2xl shadow-2xl z-50 overflow-hidden">
+                <div className="px-8 py-5 text-base sm:text-xl text-stone-500 uppercase tracking-widest font-black border-b-2 border-stone-200 dark:border-stone-700">Tìm kiếm gần đây</div>
+                {recentSearches.map((search) => (
+                  <button
+                    key={search}
+                    onClick={() => setSearchQuery(search)}
+                    className="w-full text-left px-8 py-5 text-xl sm:text-2xl hover:bg-stone-100 dark:hover:bg-stone-800 transition font-black min-h-[64px]"
+                  >
+                    {search}
+                  </button>
+                ))}
+              </div>
+            )}
+          </div>
+          
+          <div className="w-full sm:w-auto shrink-0 flex items-center bg-white dark:bg-stone-900 border-2 border-stone-300 dark:border-stone-700 rounded-2xl px-4 py-2 min-h-[72px]">
+            <select
+              value={sortOrder}
+              onChange={(e) => setSortOrder(e.target.value as any)}
+              className="bg-transparent text-lg sm:text-xl font-bold text-stone-700 dark:text-stone-300 focus:outline-none w-full appearance-none cursor-pointer pr-8"
+              style={{ backgroundImage: 'url("data:image/svg+xml;charset=UTF-8,%3csvg xmlns=\'http://www.w3.org/2000/svg\' viewBox=\'0 0 24 24\' fill=\'none\' stroke=\'currentColor\' stroke-width=\'2\' stroke-linecap=\'round\' stroke-linejoin=\'round\'%3e%3cpolyline points=\'6 9 12 15 18 9\'%3e%3c/polyline%3e%3c/svg%3e")', backgroundRepeat: 'no-repeat', backgroundPosition: 'right center', backgroundSize: '1.2em' }}
+            >
+              <option value="default">Sắp xếp: Mặc định</option>
+              <option value="newest">Mới nhất</option>
+              <option value="oldest">Cũ nhất (sớm nhất)</option>
+              <option value="az">A-Z</option>
+              <option value="za">Z-A</option>
+            </select>
+          </div>
         </div>
       )}
 
       <div className="space-y-12">
-        {filteredDecks.length > 0 ? (
+        {sortedAndFilteredDecks.length > 0 ? (
           groupBySubject ? (
             <div className="space-y-16">
               {Object.entries(groupedDecks).map(([subject, subjectDecks]) => (
@@ -271,7 +309,7 @@ export const DeckList = ({ decks, showSearch = true, groupBySubject = false, onC
             </div>
           ) : (
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-8 sm:gap-10">
-              {filteredDecks.map((deck, idx) => {
+              {sortedAndFilteredDecks.map((deck, idx) => {
                 const masteredCount = deck.cards.filter(c => c.mastery >= 80).length;
                 const masteryRate = deck.cards.length > 0 ? Math.round((masteredCount / deck.cards.length) * 100) : 0;
 

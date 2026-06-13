@@ -81,6 +81,7 @@ export interface Deck {
   createdBy?: string;
   creatorRole?: string;
   creatorName?: string;
+  createdAt?: number | string;
 }
 
 export interface StudyGroup {
