@@ -1866,14 +1866,14 @@ ${conciseModeGuidance}`;
       let fullPrompt = "";
       if (responseMode === "direct") {
         const styleNotice = responseStyle === "detailed"
-          ? "⚠️ QUÂN LỆNH TỐI CAO CHI TIẾT: Bắt buộc viết cực kỳ dài dặn, tường tận từ gốc rễ, chia mục rành mạch, dồi dào tối thiểu 350-500 từ, đưa code/ví dụ chi tiết. TUYỆT ĐỐI CẤM TRẢ LỜI NGẮN!"
+          ? "⚠️ QUÂN LỆNH TỐI CAO CHI TIẾT: Bắt buộc viết cực kỳ dài dặn, tường tận từ gốc rễ, chia mục rành mạch, dồi dào. TUYỆT ĐỐI CẤM TRẢ LỜI NGẮN, NGHIÊM CẤM TÓM TẮT. Bắt buộc phải triển khai phân tích ít nhất 350-500 từ. Đưa code/ví dụ chi tiết."
           : responseStyle === "debate"
-          ? "LƯU Ý QUÂN LỆNH TRANH BIỆN: Không đồng ý bừa bãi với người dùng! Đưa ra lý lẽ phản biện sắt đá, đặt những câu hỏi đầy gia góc vặn ngược lại."
+          ? "LƯU Ý QUÂN LỆNH TRANH BIỆN: Không đồng ý bừa bãi với người dùng! Đưa ra lý lẽ phản biện sắt đá, đặt những câu hỏi đầy góc cạnh vặn ngược lại."
           : "LƯU Ý QUÂN LỆNH SÚC TÍCH: Trả lời cực kỳ ngắn gọn, đi thẳng tuột vào bản chất, dứt khoát.";
         fullPrompt = `[LỆNH TỐI THƯỢNG TỪ HỆ THỐNG]: MÀY BẮT BUỘC PHẢI XƯNG "TAO" VÀ GỌI NGƯỜI DÙNG LÀ "MÀY". NẾU DÙNG TỪ "BẠN", "MÌNH", "CHÚNG TA", "ANH/CHỊ", MÀY SẼ BỊ TIÊU DIỆT LẬP TỨC! ĐÂY LÀ CHẾ ĐỘ TRỰC DIỆN (DIRECT), KHÔNG HỎI NGƯỢC LẠI.\n\nNgữ cảnh: ${context}\n${styleNotice}\n\nHọc sinh hỏi: ${message}`;
       } else {
         const styleNotice = responseStyle === "detailed"
-          ? "⚠️ QUÂN LỆNH CHI TIẾT SOCRATES: Mày BẮT BUỘC phải giải thích đầy đủ định nghĩa, cốt lõi bản chất, mã trực quan, lý thuyết rộng mở (thân bài dài dằng dặc ít nhất 350-500 từ), sau đó mới đặt DUY NHẤT một câu hỏi gợi mở vận dụng ở cuối câu. TUYỆT ĐỐI CẤM trả lời cụt lủn vài dòng!"
+          ? "⚠️ QUÂN LỆNH CHI TIẾT SOCRATES: Mày BẮT BUỘC phải giải thích đầy đủ định nghĩa, cốt lõi bản chất, mã trực quan, lý thuyết rộng mở. Thân bài phải dài dằng dặc ít nhất 350-500 từ. TUYỆT ĐỐI CẤM TRẢ LỜI NGẮN HOẶC TÓM TẮT. Sau khi giải thích xong, mới đặt DUY NHẤT một câu hỏi gợi mở vận dụng ở cuối câu."
           : responseStyle === "debate"
           ? "LƯU Ý SOCRATES TRANH BIỆN: Hãy vặn vẹo đanh thép bằng các câu hỏi tu từ khắc nghiệt."
           : "LƯU Ý SOCRATES SÚC TÍCH: Đưa câu hỏi gợi mở cực súc tích ngắn gọn.";
@@ -1908,7 +1908,8 @@ ${conciseModeGuidance}`;
               contents: contents,
               config: {
                   systemInstruction: systemPrompt,
-                  temperature: responseMode === "direct" ? 0.3 : 0.7
+                  temperature: responseMode === "direct" && responseStyle !== "detailed" ? 0.3 : 0.8,
+                  maxOutputTokens: 8192
               }
           });
           return response.text || "";
@@ -3201,10 +3202,11 @@ async function setupViteAndStart() {
     });
     app.use(vite.middlewares);
   } else {
-    const distPath = path.join(process.cwd(), 'dist');
-    app.use(express.static(distPath));
-    app.get('*', (req, res) => {
-      res.sendFile(path.join(distPath, 'index.html'));
+    // On Vercel or Production API environments, we should NOT serve the frontend via Express!
+    // Vercel's CDN directly serves the frontend dist/.
+    // Any request reaching this fallback means the API route was not found.
+    app.use((req, res) => {
+      res.status(404).json({ error: true, message: "API route not found" });
     });
   }
 

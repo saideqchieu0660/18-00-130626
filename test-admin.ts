@@ -1,2 +1,1 @@
-import admin from 'firebase-admin';
-console.log(typeof admin.firestore);
+import admin from "firebase-admin"; console.log(typeof admin);

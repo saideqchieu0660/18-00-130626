@@ -804,6 +804,23 @@ export function getInterleavedPool(): InterleavedKey[] {
     return clean;
   };
 
+  // Safe literal mapping for Vite production (import.meta.env does not support dynamic indexing)
+  let _viteEnv: any = {};
+  try { _viteEnv = import.meta.env || {}; } catch(e) {}
+
+  const getEnv = (k: string) => {
+    try { 
+      return (typeof process !== 'undefined' ? process.env[k] : undefined) || _viteEnv[k]; 
+    } catch(e) { return undefined; }
+  };
+
+  const geminiEnvKeys = [
+    _viteEnv.VITE_GEMINI_API_KEY_1, _viteEnv.VITE_GEMINI_API_KEY_2, _viteEnv.VITE_GEMINI_API_KEY_3,
+    _viteEnv.VITE_GEMINI_API_KEY_4, _viteEnv.VITE_GEMINI_API_KEY_5, _viteEnv.VITE_GEMINI_API_KEY_6,
+    _viteEnv.VITE_GEMINI_API_KEY_7, _viteEnv.VITE_GEMINI_API_KEY_8, _viteEnv.VITE_GEMINI_API_KEY_9,
+    _viteEnv.VITE_GEMINI_API_KEY_10, _viteEnv.VITE_GEMINI_API_KEY_11
+  ];
+
   // 1. Parse Gemini Keys: process.env.GEMINI_API_KEY_1 to process.env.GEMINI_API_KEY_11
   for (let i = 1; i <= 11; i++) {
     const k1 = cleanKey(safeProcessEnv[`GEMINI_API_KEY_${i}`]);
@@ -812,10 +829,8 @@ export function getInterleavedPool(): InterleavedKey[] {
     const k2 = cleanKey(safeProcessEnv[`VITE_GEMINI_API_KEY_${i}`]);
     if (k2) geminiKeysRaw.push(k2);
 
-    try {
-      const k3 = cleanKey(import.meta.env[`VITE_GEMINI_API_KEY_${i}`]);
-      if (k3) geminiKeysRaw.push(k3);
-    } catch (e) {}
+    const k3 = cleanKey(geminiEnvKeys[i - 1]);
+    if (k3) geminiKeysRaw.push(k3);
   }
 
   // Single default fallback Gemini keys
@@ -824,9 +839,20 @@ export function getInterleavedPool(): InterleavedKey[] {
   const gf2 = cleanKey(safeProcessEnv.VITE_GEMINI_API_KEY);
   if (gf2) geminiKeysRaw.push(gf2);
   try {
-    const gf3 = cleanKey(import.meta.env.VITE_GEMINI_API_KEY);
+    const gf3 = cleanKey(_viteEnv.VITE_GEMINI_API_KEY);
     if (gf3) geminiKeysRaw.push(gf3);
   } catch (e) {}
+
+  const openRouterEnvKeysApi = [
+    _viteEnv.VITE_OPENROUTER_API_KEY_1, _viteEnv.VITE_OPENROUTER_API_KEY_2, _viteEnv.VITE_OPENROUTER_API_KEY_3,
+    _viteEnv.VITE_OPENROUTER_API_KEY_4, _viteEnv.VITE_OPENROUTER_API_KEY_5, _viteEnv.VITE_OPENROUTER_API_KEY_6,
+    _viteEnv.VITE_OPENROUTER_API_KEY_7, _viteEnv.VITE_OPENROUTER_API_KEY_8, _viteEnv.VITE_OPENROUTER_API_KEY_9
+  ];
+  const openRouterEnvKeys = [
+    _viteEnv.VITE_OPENROUTER_KEY_1, _viteEnv.VITE_OPENROUTER_KEY_2, _viteEnv.VITE_OPENROUTER_KEY_3,
+    _viteEnv.VITE_OPENROUTER_KEY_4, _viteEnv.VITE_OPENROUTER_KEY_5, _viteEnv.VITE_OPENROUTER_KEY_6,
+    _viteEnv.VITE_OPENROUTER_KEY_7, _viteEnv.VITE_OPENROUTER_KEY_8, _viteEnv.VITE_OPENROUTER_KEY_9
+  ];
 
   // 2. Parse OpenRouter Keys: Loop 1 to 9
   for (let i = 1; i <= 9; i++) {
@@ -842,15 +868,11 @@ export function getInterleavedPool(): InterleavedKey[] {
     const k4 = cleanKey(safeProcessEnv[`VITE_OPENROUTER_KEY_${i}`]);
     if (k4) openRouterKeys.push(k4);
 
-    try {
-      const k5 = cleanKey(import.meta.env[`VITE_OPENROUTER_API_KEY_${i}`]);
-      if (k5) openRouterKeys.push(k5);
-    } catch (e) {}
+    const k5 = cleanKey(openRouterEnvKeysApi[i - 1]);
+    if (k5) openRouterKeys.push(k5);
 
-    try {
-      const k6 = cleanKey(import.meta.env[`VITE_OPENROUTER_KEY_${i}`]);
-      if (k6) openRouterKeys.push(k6);
-    } catch (e) {}
+    const k6 = cleanKey(openRouterEnvKeys[i - 1]);
+    if (k6) openRouterKeys.push(k6);
   }
 
   // Single default fallback OR keys
@@ -861,13 +883,24 @@ export function getInterleavedPool(): InterleavedKey[] {
   const orf3 = cleanKey(safeProcessEnv.VITE_OPENROUTER_KEY);
   if (orf3) openRouterKeys.push(orf3);
   try {
-    const orf4 = cleanKey(import.meta.env.VITE_OPENROUTER_API_KEY);
+    const orf4 = cleanKey(_viteEnv.VITE_OPENROUTER_API_KEY);
     if (orf4) openRouterKeys.push(orf4);
   } catch (e) {}
   try {
-    const orf5 = cleanKey(import.meta.env.VITE_OPENROUTER_KEY);
+    const orf5 = cleanKey(_viteEnv.VITE_OPENROUTER_KEY);
     if (orf5) openRouterKeys.push(orf5);
   } catch (e) {}
+
+  const deepInfraEnvKeysApi = [
+    _viteEnv.VITE_DEEPINFRA_API_KEY_1, _viteEnv.VITE_DEEPINFRA_API_KEY_2, _viteEnv.VITE_DEEPINFRA_API_KEY_3,
+    _viteEnv.VITE_DEEPINFRA_API_KEY_4, _viteEnv.VITE_DEEPINFRA_API_KEY_5, _viteEnv.VITE_DEEPINFRA_API_KEY_6,
+    _viteEnv.VITE_DEEPINFRA_API_KEY_7, _viteEnv.VITE_DEEPINFRA_API_KEY_8
+  ];
+  const deepInfraEnvKeys = [
+    _viteEnv.VITE_DEEPINFRA_KEY_1, _viteEnv.VITE_DEEPINFRA_KEY_2, _viteEnv.VITE_DEEPINFRA_KEY_3,
+    _viteEnv.VITE_DEEPINFRA_KEY_4, _viteEnv.VITE_DEEPINFRA_KEY_5, _viteEnv.VITE_DEEPINFRA_KEY_6,
+    _viteEnv.VITE_DEEPINFRA_KEY_7, _viteEnv.VITE_DEEPINFRA_KEY_8
+  ];
 
   // 3. Parse DeepInfra Keys: Loop 1 to 8
   for (let i = 1; i <= 8; i++) {
@@ -883,15 +916,11 @@ export function getInterleavedPool(): InterleavedKey[] {
     const k4 = cleanKey(safeProcessEnv[`VITE_DEEPINFRA_KEY_${i}`]);
     if (k4) deepInfraKeys.push(k4);
 
-    try {
-      const k5 = cleanKey(import.meta.env[`VITE_DEEPINFRA_API_KEY_${i}`]);
-      if (k5) deepInfraKeys.push(k5);
-    } catch (e) {}
+    const k5 = cleanKey(deepInfraEnvKeysApi[i - 1]);
+    if (k5) deepInfraKeys.push(k5);
 
-    try {
-      const k6 = cleanKey(import.meta.env[`VITE_DEEPINFRA_KEY_${i}`]);
-      if (k6) deepInfraKeys.push(k6);
-    } catch (e) {}
+    const k6 = cleanKey(deepInfraEnvKeys[i - 1]);
+    if (k6) deepInfraKeys.push(k6);
   }
 
   // Single default fallback DeepInfra keys
@@ -902,13 +931,26 @@ export function getInterleavedPool(): InterleavedKey[] {
   const dif3 = cleanKey(safeProcessEnv.VITE_DEEPINFRA_KEY);
   if (dif3) deepInfraKeys.push(dif3);
   try {
-    const dif4 = cleanKey(import.meta.env.VITE_DEEPINFRA_API_KEY);
+    const dif4 = cleanKey(_viteEnv.VITE_DEEPINFRA_API_KEY);
     if (dif4) deepInfraKeys.push(dif4);
   } catch (e) {}
   try {
-    const dif5 = cleanKey(import.meta.env.VITE_DEEPINFRA_KEY);
+    const dif5 = cleanKey(_viteEnv.VITE_DEEPINFRA_KEY);
     if (dif5) deepInfraKeys.push(dif5);
   } catch (e) {}
+
+  const groqEnvKeysApi = [
+    _viteEnv.VITE_GROQ_API_KEY_1, _viteEnv.VITE_GROQ_API_KEY_2, _viteEnv.VITE_GROQ_API_KEY_3,
+    _viteEnv.VITE_GROQ_API_KEY_4, _viteEnv.VITE_GROQ_API_KEY_5, _viteEnv.VITE_GROQ_API_KEY_6,
+    _viteEnv.VITE_GROQ_API_KEY_7, _viteEnv.VITE_GROQ_API_KEY_8, _viteEnv.VITE_GROQ_API_KEY_9,
+    _viteEnv.VITE_GROQ_API_KEY_10
+  ];
+  const groqEnvKeys = [
+    _viteEnv.VITE_GROQ_KEY_1, _viteEnv.VITE_GROQ_KEY_2, _viteEnv.VITE_GROQ_KEY_3,
+    _viteEnv.VITE_GROQ_KEY_4, _viteEnv.VITE_GROQ_KEY_5, _viteEnv.VITE_GROQ_KEY_6,
+    _viteEnv.VITE_GROQ_KEY_7, _viteEnv.VITE_GROQ_KEY_8, _viteEnv.VITE_GROQ_KEY_9,
+    _viteEnv.VITE_GROQ_KEY_10
+  ];
 
   // 4. Parse Groq Keys (Exhibition - DO NOT leak into active loop if empty)
   for (let i = 1; i <= 10; i++) {
@@ -921,15 +963,11 @@ export function getInterleavedPool(): InterleavedKey[] {
     const k3 = cleanKey(safeProcessEnv[`VITE_GROQ_KEY_${i}`]);
     if (k3) groqKeysRaw.push(k3);
 
-    try {
-      const k4 = cleanKey(import.meta.env[`VITE_GROQ_API_KEY_${i}`]);
-      if (k4) groqKeysRaw.push(k4);
-    } catch (e) {}
+    const k4 = cleanKey(groqEnvKeysApi[i - 1]);
+    if (k4) groqKeysRaw.push(k4);
 
-    try {
-      const k5 = cleanKey(import.meta.env[`VITE_GROQ_KEY_${i}`]);
-      if (k5) groqKeysRaw.push(k5);
-    } catch (e) {}
+    const k5 = cleanKey(groqEnvKeys[i - 1]);
+    if (k5) groqKeysRaw.push(k5);
   }
   // Fallbacks
   const grf1 = cleanKey(safeProcessEnv.GROQ_API_KEY);
@@ -939,11 +977,11 @@ export function getInterleavedPool(): InterleavedKey[] {
   const grf3 = cleanKey(safeProcessEnv.VITE_GROQ_KEY);
   if (grf3) groqKeysRaw.push(grf3);
   try {
-    const grf4 = cleanKey(import.meta.env.VITE_GROQ_API_KEY);
+    const grf4 = cleanKey(_viteEnv.VITE_GROQ_API_KEY);
     if (grf4) groqKeysRaw.push(grf4);
   } catch (e) {}
   try {
-    const grf5 = cleanKey(import.meta.env.VITE_GROQ_KEY);
+    const grf5 = cleanKey(_viteEnv.VITE_GROQ_KEY);
     if (grf5) groqKeysRaw.push(grf5);
   } catch (e) {}
 
